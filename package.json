@@ -1,6 +1,6 @@
 {
   "name": "pipsync-n8n-templates",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "Safe-by-default n8n workflow templates for synthetic validation and read-only PipSync API summaries.",
   "license": "Apache-2.0",

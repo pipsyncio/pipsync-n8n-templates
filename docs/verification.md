@@ -51,13 +51,27 @@ The same pinned smoke is available as the manual **n8n Import Smoke** GitHub
 Actions workflow. It is manual because the n8n image is much larger than this
 source repository and is not required for every documentation-only change.
 
-## Local environment note
+## Local runtime evidence
 
-During the 0.1.0 preparation on 2026-08-25, the deterministic gates, Node.js
-20/22 tests, Action workflow lint, XML parsing, and rendered SVG review all
-passed. An additional local n8n runtime smoke could not reach n8n: Docker
-Desktop left newly created containers in `Created` state, and the fallback
-one-off npm installation stopped during dependency cleanup. Both attempts were
-aborted before workflow import began, so they are recorded as environment gaps,
-not as passing or failing import evidence. Use the script or manual Actions job
-on a healthy Docker runner to close that optional runtime evidence gap.
+During the 0.1.2 preparation on 2026-08-25, a clean temporary installation of
+the official n8n 2.36.7 runtime was launched with Node.js 24.19.0. After its
+native SQLite and isolated-expression dependencies were built for that runtime,
+n8n initialized a fresh local database, applied its migrations, and ran:
+
+```sh
+n8n import:workflow --input=/absolute/path/to/workflows --separate
+```
+
+The command exited successfully with:
+
+```text
+Importing 3 workflows...
+Successfully imported 3 workflows.
+```
+
+Earlier attempts with a stalled Docker Desktop instance, Node.js 25, and an
+install that deliberately skipped every lifecycle script did not reach the
+workflow parser. Those environment-specific failures are not counted as product
+test failures. The final Node.js 24 run closes the local import evidence gap;
+the Docker script and manual Actions workflow remain the reproducible maintainer
+path for repeating the same official importer check.

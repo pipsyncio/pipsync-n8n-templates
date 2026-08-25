@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-08-25
+
+### Verified
+
+- import all three exports with the official n8n 2.36.7
+  `import:workflow --separate` command against a fresh local database
+
 ## [0.1.1] - 2026-08-25
 
 ### Changed
@@ -28,6 +35,7 @@ All notable changes to this project are documented here. The format follows
 - deterministic built-in Node.js workflow validation, secret scanning, tests,
   and CI
 
-[Unreleased]: https://github.com/pipsyncio/pipsync-n8n-templates/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/pipsyncio/pipsync-n8n-templates/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/pipsyncio/pipsync-n8n-templates/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/pipsyncio/pipsync-n8n-templates/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/pipsyncio/pipsync-n8n-templates/releases/tag/v0.1.0
