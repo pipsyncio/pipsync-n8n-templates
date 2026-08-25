@@ -3,7 +3,8 @@ set -euo pipefail
 
 readonly N8N_SMOKE_IMAGE="${N8N_SMOKE_IMAGE:-n8nio/n8n:2.36.7}"
 readonly N8N_SMOKE_CONTAINER="pipsync-n8n-import-smoke-${RANDOM}-${RANDOM}"
-readonly REPOSITORY_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPOSITORY_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+readonly REPOSITORY_ROOT
 
 cleanup() {
   docker rm -f "${N8N_SMOKE_CONTAINER}" >/dev/null 2>&1 || true
