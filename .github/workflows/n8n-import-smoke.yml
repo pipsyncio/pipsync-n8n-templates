@@ -11,6 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Import all workflows into n8n 2.36.7
         run: ./scripts/smoke-import.sh

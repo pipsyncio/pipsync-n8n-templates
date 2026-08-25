@@ -85,8 +85,8 @@ evidence boundary and the manual GitHub Actions smoke job.
 
 ## Build with PipSync
 
-Use these templates to evaluate the integration shape, then visit
-[pipsync.io](https://pipsync.io) for the managed product. Bugs and template
+Use these templates to evaluate the integration shape, then continue with the
+[PipSync integrations guide](https://pipsync.io/en/integrations?utm_source=github&utm_medium=repository&utm_campaign=n8n-templates) for the managed product. Bugs and template
 ideas belong in GitHub issues; suspected security problems belong in the
 private reporting route described in [SECURITY.md](SECURITY.md).
 

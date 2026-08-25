@@ -2,7 +2,7 @@
 
 ## Fast deterministic gate
 
-The default CI job uses only Node.js built-ins and runs on Node.js 20 and 22:
+The default CI job uses only Node.js built-ins and runs on Node.js 20 and 24:
 
 ```sh
 npm run validate
