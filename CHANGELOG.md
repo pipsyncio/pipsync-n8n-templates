@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-25
+
+### Changed
+
+- update CI to current Node and official GitHub Action majors
+- tighten the optional n8n import smoke script and product handoff
+
 ## [0.1.0] - 2026-08-25
 
 ### Added
@@ -21,5 +28,6 @@ All notable changes to this project are documented here. The format follows
 - deterministic built-in Node.js workflow validation, secret scanning, tests,
   and CI
 
-[Unreleased]: https://github.com/pipsyncio/pipsync-n8n-templates/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/pipsyncio/pipsync-n8n-templates/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/pipsyncio/pipsync-n8n-templates/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/pipsyncio/pipsync-n8n-templates/releases/tag/v0.1.0
