@@ -1,0 +1,309 @@
+{
+  "name": "PipSync 02 - Read-only Signals to Telegram or Slack",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Safe-by-default signal summary\n\nThe workflow starts with synthetic data. The documented `GET /signals` node and both notification nodes are disabled. Configure a read-only PipSync Header Auth credential, enable the GET node, set `useSyntheticData` to false, then enable exactly one notification node.",
+        "height": 330,
+        "width": 500,
+        "color": 5
+      },
+      "id": "02000000-0000-4000-8000-000000000001",
+      "name": "Setup guidance",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -740,
+        -300
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "02000000-0000-4000-8000-000000000002",
+      "name": "Run Manually",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -680,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "02000000-0000-4000-8000-000000000021",
+              "name": "useSyntheticData",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "02000000-0000-4000-8000-000000000022",
+              "name": "apiBaseUrl",
+              "value": "https://app.pipsync.io/api/v1",
+              "type": "string"
+            },
+            {
+              "id": "02000000-0000-4000-8000-000000000023",
+              "name": "limit",
+              "value": 10,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "02000000-0000-4000-8000-000000000003",
+      "name": "Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -460,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "02000000-0000-4000-8000-000000000024",
+              "leftValue": "={{ $json.useSyntheticData }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "02000000-0000-4000-8000-000000000004",
+      "name": "Use Synthetic Data",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -220,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    statusCode: 200,\n    body: {\n      data: [\n        {\n          id: '11111111-1111-4111-8111-111111111111',\n          instrument: 'EURUSD',\n          direction: 'BUY',\n          entryPrice: '1.0850',\n          stopLoss: '1.0820',\n          takeProfits: ['1.0900'],\n          channelName: 'Synthetic Demo Channel',\n          providerName: null,\n          status: 'validated',\n          receivedAt: '2026-01-15T10:00:00.000Z',\n        },\n        {\n          id: '22222222-2222-4222-8222-222222222222',\n          instrument: 'GBPUSD',\n          direction: 'SELL',\n          entryPrice: '1.2700',\n          stopLoss: '1.2740',\n          takeProfits: ['1.2640'],\n          channelName: 'Synthetic Demo Channel',\n          providerName: null,\n          status: 'validated',\n          receivedAt: '2026-01-15T10:05:00.000Z',\n        },\n      ],\n      meta: { count: 2, limit: 10 },\n    },\n  },\n}];"
+      },
+      "id": "02000000-0000-4000-8000-000000000005",
+      "name": "Synthetic Signals Fixture",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        20,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Configuration').first().json.apiBaseUrl }}/signals",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "limit",
+              "value": "={{ $('Configuration').first().json.limit }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 10000
+        }
+      },
+      "id": "02000000-0000-4000-8000-000000000006",
+      "name": "GET PipSync Signals - ENABLE AFTER SETUP",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        20,
+        180
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const statusCode = Number($json.statusCode ?? 200);\nconst body = $json.body ?? $json;\nconst data = body && Array.isArray(body.data) ? body.data : null;\n\nif (statusCode < 200 || statusCode >= 300 || !data) {\n  return [{\n    json: {\n      schema: 'pipsync.signal-summary.v1',\n      ok: false,\n      source: 'read-only-signals',\n      httpStatus: Number.isFinite(statusCode) ? statusCode : null,\n      notification: {\n        previewOnly: true,\n        message: 'PipSync signal summary unavailable. Check the read-only API credential and workflow execution log.',\n      },\n    },\n  }];\n}\n\nconst safeSignals = data.slice(0, 100).filter((item) => item && typeof item === 'object');\nconst instruments = [...new Set(safeSignals\n  .map((item) => typeof item.instrument === 'string' ? item.instrument : null)\n  .filter(Boolean))]\n  .slice(0, 8);\nconst buy = safeSignals.filter((item) => item.direction === 'BUY').length;\nconst sell = safeSignals.filter((item) => item.direction === 'SELL').length;\nconst latest = safeSignals\n  .map((item) => item.receivedAt)\n  .filter((candidate) => typeof candidate === 'string' && Number.isFinite(Date.parse(candidate)))\n  .sort()\n  .at(-1) ?? null;\nconst message = [\n  'PipSync read-only signal summary',\n  `Signals: ${safeSignals.length} (BUY ${buy}, SELL ${sell})`,\n  `Instruments: ${instruments.length ? instruments.join(', ') : 'none'}`,\n  `Latest received: ${latest ?? 'not available'}`,\n  'No order was created by this workflow.',\n].join('\\n');\n\nreturn [{\n  json: {\n    schema: 'pipsync.signal-summary.v1',\n    ok: true,\n    source: 'read-only-signals',\n    count: safeSignals.length,\n    directions: { BUY: buy, SELL: sell },\n    instruments,\n    latestReceivedAt: latest,\n    redaction: { identifiers: 'omitted', prices: 'omitted', channels: 'omitted', providers: 'omitted' },\n    notification: { previewOnly: true, message },\n  },\n}];"
+      },
+      "id": "02000000-0000-4000-8000-000000000007",
+      "name": "Build Redacted Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_CHANNEL_ID",
+          "mode": "id"
+        },
+        "messageType": "text",
+        "text": "={{ $json.notification.message }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "02000000-0000-4000-8000-000000000008",
+      "name": "Slack - DISABLED UNTIL CONFIGURED",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        600,
+        0
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "REPLACE_WITH_CHAT_ID",
+        "text": "={{ $json.notification.message }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "02000000-0000-4000-8000-000000000009",
+      "name": "Telegram - DISABLED UNTIL CONFIGURED",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        600,
+        160
+      ],
+      "disabled": true
+    }
+  ],
+  "connections": {
+    "Run Manually": {
+      "main": [
+        [
+          {
+            "node": "Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configuration": {
+      "main": [
+        [
+          {
+            "node": "Use Synthetic Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use Synthetic Data": {
+      "main": [
+        [
+          {
+            "node": "Synthetic Signals Fixture",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GET PipSync Signals - ENABLE AFTER SETUP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Synthetic Signals Fixture": {
+      "main": [
+        [
+          {
+            "node": "Build Redacted Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET PipSync Signals - ENABLE AFTER SETUP": {
+      "main": [
+        [
+          {
+            "node": "Build Redacted Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Redacted Summary": {
+      "main": [
+        [
+          {
+            "node": "Slack - DISABLED UNTIL CONFIGURED",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Telegram - DISABLED UNTIL CONFIGURED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "02000000-0000-4000-8000-000000000000",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

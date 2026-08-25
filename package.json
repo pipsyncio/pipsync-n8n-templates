@@ -1,0 +1,32 @@
+{
+  "name": "pipsync-n8n-templates",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Safe-by-default n8n workflow templates for synthetic validation and read-only PipSync API summaries.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pipsyncio/pipsync-n8n-templates.git"
+  },
+  "homepage": "https://github.com/pipsyncio/pipsync-n8n-templates#readme",
+  "bugs": {
+    "url": "https://github.com/pipsyncio/pipsync-n8n-templates/issues"
+  },
+  "keywords": [
+    "n8n",
+    "pipsync",
+    "tradingview",
+    "workflow-templates",
+    "paper-trading",
+    "read-only"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "validate": "node scripts/validate-workflows.mjs",
+    "scan:secrets": "node scripts/scan-secrets.mjs",
+    "test": "node --test"
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "health": {
+    "statusCode": 200,
+    "body": {
+      "status": "ok",
+      "version": "v1",
+      "time": "2026-01-15T10:00:00.000Z"
+    }
+  },
+  "usage": {
+    "statusCode": 200,
+    "body": {
+      "tier": "synthetic-demo",
+      "status": "active",
+      "periodEnd": "2026-01-31T23:59:59.000Z",
+      "limits": [
+        {
+          "key": "signals_monthly",
+          "max": 1000,
+          "used": 825,
+          "period": "monthly"
+        },
+        {
+          "key": "api_requests_daily",
+          "max": 5000,
+          "used": 1400,
+          "period": "daily"
+        }
+      ]
+    }
+  },
+  "reports": {
+    "statusCode": 200,
+    "body": {
+      "format": "pipsync.reports.catalog.v1",
+      "generatedAt": "2026-01-15T10:00:00.000Z",
+      "data": [
+        {
+          "id": "trades",
+          "title": "Trade report",
+          "description": "Synthetic fixture",
+          "status": "available",
+          "permission": "read:trades",
+          "href": "/api/v1/reports/trades",
+          "formats": [
+            "json",
+            "csv",
+            "pdf"
+          ],
+          "filters": []
+        }
+      ],
+      "meta": {
+        "count": 1,
+        "available": 1,
+        "planned": 0
+      }
+    }
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "name": "PipSync 01 - TradingView Paper Signal Validator",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Local validation demo only\n\nAccepts a small synthetic TradingView-shaped payload in `paper` or `sandbox` mode. It rejects `live`, performs no network request, stores no replay receipt, and never calls PipSync or a broker.",
+        "height": 300,
+        "width": 430,
+        "color": 7
+      },
+      "id": "01000000-0000-4000-8000-000000000001",
+      "name": "Safety boundary",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        -240
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pipsync-demo-paper-signal-validator",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "01000000-0000-4000-8000-000000000002",
+      "name": "Synthetic TradingView Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -320,
+        80
+      ],
+      "webhookId": "01000000-0000-4000-8000-000000000099"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json && typeof $json === 'object' && !Array.isArray($json)\n  ? ($json.body ?? $json)\n  : null;\n\nconst errors = [];\nconst allowedKeys = new Set([\n  'schema',\n  'environment',\n  'signal_id',\n  'instrument',\n  'direction',\n  'entry_price',\n  'stop_loss',\n  'take_profit',\n  'created_at',\n]);\n\nif (!raw || typeof raw !== 'object' || Array.isArray(raw)) {\n  errors.push({ code: 'INVALID_BODY', field: '$', message: 'Expected one JSON object.' });\n}\n\nconst value = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};\nfor (const key of Object.keys(value)) {\n  if (!allowedKeys.has(key)) {\n    errors.push({ code: 'UNKNOWN_FIELD', field: key, message: 'Field is not part of the demo contract.' });\n  }\n}\n\nif (value.schema !== 'pipsync.tradingview.paper-signal.v1') {\n  errors.push({ code: 'INVALID_SCHEMA', field: 'schema', message: 'Use pipsync.tradingview.paper-signal.v1.' });\n}\n\nif (value.environment === 'live') {\n  errors.push({ code: 'LIVE_MODE_REJECTED', field: 'environment', message: 'Live mode is not supported by this demo.' });\n} else if (!['paper', 'sandbox'].includes(value.environment)) {\n  errors.push({ code: 'INVALID_ENVIRONMENT', field: 'environment', message: 'Use paper or sandbox.' });\n}\n\nif (typeof value.signal_id !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:-]{7,63}$/.test(value.signal_id)) {\n  errors.push({ code: 'INVALID_SIGNAL_ID', field: 'signal_id', message: 'Use 8-64 safe identifier characters.' });\n}\n\nif (typeof value.instrument !== 'string' || !/^[A-Z0-9][A-Z0-9._:/-]{2,19}$/.test(value.instrument)) {\n  errors.push({ code: 'INVALID_INSTRUMENT', field: 'instrument', message: 'Use a 3-20 character uppercase instrument.' });\n}\n\nif (!['BUY', 'SELL'].includes(value.direction)) {\n  errors.push({ code: 'INVALID_DIRECTION', field: 'direction', message: 'Use BUY or SELL.' });\n}\n\nconst positiveNumber = (candidate) => typeof candidate === 'number' && Number.isFinite(candidate) && candidate > 0;\nif (!positiveNumber(value.entry_price)) {\n  errors.push({ code: 'INVALID_ENTRY_PRICE', field: 'entry_price', message: 'Use a positive finite number.' });\n}\n\nfor (const field of ['stop_loss', 'take_profit']) {\n  if (Object.prototype.hasOwnProperty.call(value, field) && value[field] !== null && !positiveNumber(value[field])) {\n    errors.push({ code: `INVALID_${field.toUpperCase()}`, field, message: 'Use null or a positive finite number.' });\n  }\n}\n\nif (positiveNumber(value.entry_price) && positiveNumber(value.stop_loss)) {\n  if (value.direction === 'BUY' && value.stop_loss >= value.entry_price) {\n    errors.push({ code: 'INVALID_STOP_GEOMETRY', field: 'stop_loss', message: 'BUY stop loss must be below entry.' });\n  }\n  if (value.direction === 'SELL' && value.stop_loss <= value.entry_price) {\n    errors.push({ code: 'INVALID_STOP_GEOMETRY', field: 'stop_loss', message: 'SELL stop loss must be above entry.' });\n  }\n}\n\nif (positiveNumber(value.entry_price) && positiveNumber(value.take_profit)) {\n  if (value.direction === 'BUY' && value.take_profit <= value.entry_price) {\n    errors.push({ code: 'INVALID_TARGET_GEOMETRY', field: 'take_profit', message: 'BUY take profit must be above entry.' });\n  }\n  if (value.direction === 'SELL' && value.take_profit >= value.entry_price) {\n    errors.push({ code: 'INVALID_TARGET_GEOMETRY', field: 'take_profit', message: 'SELL take profit must be below entry.' });\n  }\n}\n\nif (typeof value.created_at !== 'string' || !Number.isFinite(Date.parse(value.created_at))) {\n  errors.push({ code: 'INVALID_CREATED_AT', field: 'created_at', message: 'Use an ISO 8601 timestamp.' });\n}\n\nconst accepted = errors.length === 0;\nconst liveRejected = errors.some((error) => error.code === 'LIVE_MODE_REJECTED');\nconst safeSignal = accepted\n  ? {\n      signal_id: value.signal_id,\n      environment: value.environment,\n      instrument: value.instrument,\n      direction: value.direction,\n      entry_price: value.entry_price,\n      stop_loss: value.stop_loss ?? null,\n      take_profit: value.take_profit ?? null,\n      created_at: value.created_at,\n    }\n  : null;\n\nreturn [{\n  json: {\n    httpStatus: accepted ? 200 : (liveRejected ? 403 : 400),\n    body: {\n      schema: 'pipsync.validation-result.v1',\n      accepted,\n      execution: 'disabled',\n      signal: safeSignal,\n      errors,\n      limitations: {\n        authentication: 'not implemented',\n        durableReplayProtection: 'not implemented',\n        downstreamExecution: 'not implemented',\n      },\n    },\n  },\n}];"
+      },
+      "id": "01000000-0000-4000-8000-000000000003",
+      "name": "Normalize and Validate Paper Only",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -40,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.body }}",
+        "options": {
+          "responseCode": "={{ $json.httpStatus }}"
+        }
+      },
+      "id": "01000000-0000-4000-8000-000000000004",
+      "name": "Return Validation Result",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        260,
+        80
+      ]
+    }
+  ],
+  "connections": {
+    "Synthetic TradingView Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize and Validate Paper Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize and Validate Paper Only": {
+      "main": [
+        [
+          {
+            "node": "Return Validation Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "01000000-0000-4000-8000-000000000000",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

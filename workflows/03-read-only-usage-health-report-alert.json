@@ -1,0 +1,508 @@
+{
+  "name": "PipSync 03 - Read-only Usage Health and Report Alert",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Scheduled read-only monitor\n\nStarts inactive and uses synthetic responses. The only remote methods are documented GET requests to `/health`, `/account/usage`, and `/reports`. All three request nodes and both chat nodes are disabled until explicitly configured.",
+        "height": 320,
+        "width": 520,
+        "color": 6
+      },
+      "id": "03000000-0000-4000-8000-000000000001",
+      "name": "Safety and setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -780,
+        -340
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "03000000-0000-4000-8000-000000000002",
+      "name": "Every 6 Hours - INACTIVE WORKFLOW",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -720,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "03000000-0000-4000-8000-000000000021",
+              "name": "useSyntheticData",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "03000000-0000-4000-8000-000000000022",
+              "name": "apiBaseUrl",
+              "value": "https://app.pipsync.io/api/v1",
+              "type": "string"
+            },
+            {
+              "id": "03000000-0000-4000-8000-000000000023",
+              "name": "warnAtPercent",
+              "value": 80,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "03000000-0000-4000-8000-000000000003",
+      "name": "Monitor Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -500,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "03000000-0000-4000-8000-000000000024",
+              "leftValue": "={{ $json.useSyntheticData }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "03000000-0000-4000-8000-000000000004",
+      "name": "Use Synthetic Monitor Data",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -260,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      source: 'health',\n      statusCode: 200,\n      body: { status: 'ok', version: 'v1', time: '2026-01-15T10:00:00.000Z' },\n    },\n  },\n  {\n    json: {\n      source: 'usage',\n      statusCode: 200,\n      body: {\n        tier: 'synthetic-demo',\n        status: 'active',\n        periodEnd: '2026-01-31T23:59:59.000Z',\n        limits: [\n          { key: 'signals_monthly', max: 1000, used: 825, period: 'monthly' },\n          { key: 'api_requests_daily', max: 5000, used: 1400, period: 'daily' },\n        ],\n      },\n    },\n  },\n  {\n    json: {\n      source: 'reports',\n      statusCode: 200,\n      body: {\n        format: 'pipsync.reports.catalog.v1',\n        generatedAt: '2026-01-15T10:00:00.000Z',\n        data: [\n          { id: 'trades', title: 'Trade report', description: 'Synthetic', status: 'available', permission: 'read:trades', href: '/api/v1/reports/trades', formats: ['json', 'csv', 'pdf'], filters: [] },\n          { id: 'demo-planned', title: 'Planned report', description: 'Synthetic', status: 'planned', permission: 'read:reports', href: null, formats: ['json'], filters: [] },\n        ],\n        meta: { count: 2, available: 1, planned: 1 },\n      },\n    },\n  },\n];"
+      },
+      "id": "03000000-0000-4000-8000-000000000005",
+      "name": "Synthetic Health Usage and Reports",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        20,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Monitor Configuration').first().json.apiBaseUrl }}/health",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 10000
+        }
+      },
+      "id": "03000000-0000-4000-8000-000000000006",
+      "name": "GET Health - ENABLE AFTER SETUP",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        20,
+        0
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { source: 'health', statusCode: Number($json.statusCode ?? 0), body: $json.body ?? null } }];"
+      },
+      "id": "03000000-0000-4000-8000-000000000007",
+      "name": "Keep Safe Health Fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Monitor Configuration').first().json.apiBaseUrl }}/account/usage",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 10000
+        }
+      },
+      "id": "03000000-0000-4000-8000-000000000008",
+      "name": "GET Account Usage - ENABLE AFTER SETUP",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        20,
+        160
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { source: 'usage', statusCode: Number($json.statusCode ?? 0), body: $json.body ?? null } }];"
+      },
+      "id": "03000000-0000-4000-8000-000000000009",
+      "name": "Keep Safe Usage Fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Monitor Configuration').first().json.apiBaseUrl }}/reports",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 10000
+        }
+      },
+      "id": "03000000-0000-4000-8000-000000000010",
+      "name": "GET Report Catalog - ENABLE AFTER SETUP",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        20,
+        320
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { source: 'reports', statusCode: Number($json.statusCode ?? 0), body: $json.body ?? null } }];"
+      },
+      "id": "03000000-0000-4000-8000-000000000011",
+      "name": "Keep Safe Report Fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "append",
+        "numberInputs": 3
+      },
+      "id": "03000000-0000-4000-8000-000000000012",
+      "name": "Collect Read-only Responses",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        540,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map((item) => item.json).filter((item) => item && typeof item === 'object');\nconst bySource = Object.fromEntries(rows.map((item) => [item.source, item]));\nconst thresholdCandidate = Number($('Monitor Configuration').first().json.warnAtPercent);\nconst warnAtPercent = Number.isFinite(thresholdCandidate)\n  ? Math.min(100, Math.max(1, thresholdCandidate))\n  : 80;\n\nconst healthRow = bySource.health ?? {};\nconst healthBody = healthRow.body && typeof healthRow.body === 'object' ? healthRow.body : {};\nconst healthOk = healthRow.statusCode >= 200 && healthRow.statusCode < 300 && healthBody.status === 'ok';\n\nconst usageRow = bySource.usage ?? {};\nconst usageBody = usageRow.body && typeof usageRow.body === 'object' ? usageRow.body : {};\nconst limits = Array.isArray(usageBody.limits) ? usageBody.limits : [];\nconst finiteLimits = limits\n  .filter((limit) => limit && typeof limit === 'object' && Number.isFinite(limit.used) && Number.isFinite(limit.max) && limit.max > 0)\n  .map((limit) => ({\n    key: typeof limit.key === 'string' ? limit.key : 'unnamed',\n    used: limit.used,\n    max: limit.max,\n    period: typeof limit.period === 'string' ? limit.period : 'unknown',\n    percent: Math.round((limit.used / limit.max) * 1000) / 10,\n  }))\n  .sort((left, right) => right.percent - left.percent);\nconst highest = finiteLimits[0] ?? null;\nconst usageWarning = highest ? highest.percent >= warnAtPercent : false;\nconst usageReachable = usageRow.statusCode >= 200 && usageRow.statusCode < 300;\n\nconst reportsRow = bySource.reports ?? {};\nconst reportsBody = reportsRow.body && typeof reportsRow.body === 'object' ? reportsRow.body : {};\nconst reportMeta = reportsBody.meta && typeof reportsBody.meta === 'object' ? reportsBody.meta : {};\nconst reportsReachable = reportsRow.statusCode >= 200 && reportsRow.statusCode < 300;\n\nlet severity = 'info';\nif (!healthOk || !usageReachable || !reportsReachable) severity = 'critical';\nelse if (usageWarning) severity = 'warning';\n\nconst message = [\n  `PipSync read-only monitor: ${severity.toUpperCase()}`,\n  `Health: ${healthOk ? 'ok' : 'check required'}`,\n  highest\n    ? `Highest usage: ${highest.key} ${highest.used}/${highest.max} (${highest.percent}%, threshold ${warnAtPercent}%)`\n    : 'Highest usage: no finite limit returned',\n  `Reports: ${Number.isInteger(reportMeta.available) ? reportMeta.available : 'n/a'} available, ${Number.isInteger(reportMeta.planned) ? reportMeta.planned : 'n/a'} planned`,\n  'No write request or trade execution was performed.',\n].join('\\n');\n\nreturn [{\n  json: {\n    schema: 'pipsync.read-only-monitor.v1',\n    severity,\n    checkedAt: new Date().toISOString(),\n    health: { ok: healthOk, httpStatus: Number.isFinite(healthRow.statusCode) ? healthRow.statusCode : null },\n    usage: { reachable: usageReachable, thresholdPercent: warnAtPercent, highest },\n    reports: {\n      reachable: reportsReachable,\n      available: Number.isInteger(reportMeta.available) ? reportMeta.available : null,\n      planned: Number.isInteger(reportMeta.planned) ? reportMeta.planned : null,\n    },\n    redaction: { responseHeaders: 'omitted', errorBodies: 'omitted', credentials: 'not present' },\n    notification: { previewOnly: true, message },\n  },\n}];"
+      },
+      "id": "03000000-0000-4000-8000-000000000013",
+      "name": "Evaluate Threshold and Redact",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_CHANNEL_ID",
+          "mode": "id"
+        },
+        "messageType": "text",
+        "text": "={{ $json.notification.message }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "03000000-0000-4000-8000-000000000014",
+      "name": "Slack Alert - DISABLED UNTIL CONFIGURED",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        1080,
+        0
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "REPLACE_WITH_CHAT_ID",
+        "text": "={{ $json.notification.message }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "03000000-0000-4000-8000-000000000015",
+      "name": "Telegram Alert - DISABLED UNTIL CONFIGURED",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1080,
+        160
+      ],
+      "disabled": true
+    }
+  ],
+  "connections": {
+    "Every 6 Hours - INACTIVE WORKFLOW": {
+      "main": [
+        [
+          {
+            "node": "Monitor Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monitor Configuration": {
+      "main": [
+        [
+          {
+            "node": "Use Synthetic Monitor Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use Synthetic Monitor Data": {
+      "main": [
+        [
+          {
+            "node": "Synthetic Health Usage and Reports",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GET Health - ENABLE AFTER SETUP",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GET Account Usage - ENABLE AFTER SETUP",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GET Report Catalog - ENABLE AFTER SETUP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Synthetic Health Usage and Reports": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Threshold and Redact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET Health - ENABLE AFTER SETUP": {
+      "main": [
+        [
+          {
+            "node": "Keep Safe Health Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep Safe Health Fields": {
+      "main": [
+        [
+          {
+            "node": "Collect Read-only Responses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET Account Usage - ENABLE AFTER SETUP": {
+      "main": [
+        [
+          {
+            "node": "Keep Safe Usage Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep Safe Usage Fields": {
+      "main": [
+        [
+          {
+            "node": "Collect Read-only Responses",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "GET Report Catalog - ENABLE AFTER SETUP": {
+      "main": [
+        [
+          {
+            "node": "Keep Safe Report Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep Safe Report Fields": {
+      "main": [
+        [
+          {
+            "node": "Collect Read-only Responses",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Collect Read-only Responses": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Threshold and Redact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Threshold and Redact": {
+      "main": [
+        [
+          {
+            "node": "Slack Alert - DISABLED UNTIL CONFIGURED",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Telegram Alert - DISABLED UNTIL CONFIGURED",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "03000000-0000-4000-8000-000000000000",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

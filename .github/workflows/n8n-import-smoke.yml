@@ -1,0 +1,16 @@
+name: n8n Import Smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Import all workflows into n8n 2.36.7
+        run: ./scripts/smoke-import.sh
